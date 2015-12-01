@@ -177,6 +177,17 @@ boolean Adafruit_VS1053_FilePlayer::playFullFile(const char *trackname) {
   return true;
 }
 
+boolean Adafruit_VS1053_FilePlayer::playFullFile(SDLib::File &track) {
+  if (! startPlayingFile(track)) return false;
+
+  while (playingMusic) {
+    // twiddle thumbs
+    feedBuffer();
+  }
+  // music file finished!
+  return true;
+}
+
 void Adafruit_VS1053_FilePlayer::stopPlaying(void) {
   // cancel all playback
   sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_LINE1 | VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_CANCEL);
@@ -203,15 +214,19 @@ boolean Adafruit_VS1053_FilePlayer::stopped(void) {
   return (!playingMusic && !currentTrack);
 }
 
-
 boolean Adafruit_VS1053_FilePlayer::startPlayingFile(const char *trackname) {
+  File track = SD.open(trackname);
+  startPlayingFile(track);
+}
+
+boolean Adafruit_VS1053_FilePlayer::startPlayingFile(File &track) {
   // reset playback
   sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_LINE1 | VS1053_MODE_SM_SDINEW);
   // resync
   sciWrite(VS1053_REG_WRAMADDR, 0x1e29);
   sciWrite(VS1053_REG_WRAM, 0);
 
-  currentTrack = SD.open(trackname);
+  currentTrack = track;
   if (!currentTrack) {
     return false;
   }
